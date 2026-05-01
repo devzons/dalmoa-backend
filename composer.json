@@ -1,0 +1,37 @@
+{
+  "name": "dalmoa/core",
+  "description": "Dalmoa Core Plugin - CPTs, Fields, API, Admin UX",
+  "type": "wordpress-plugin",
+  "license": "proprietary",
+  "require": {
+    "php": ">=8.2",
+    "stripe/stripe-php": "^20.1"
+  },
+  "autoload": {
+    "psr-4": {
+      "DalmoaCore\\": "src/"
+    }
+  },
+  "autoload-dev": {
+    "psr-4": {
+      "DalmoaCore\\Tests\\": "tests/"
+    }
+  },
+  "scripts": {
+    "post-install-cmd": [
+      "@composer dump-autoload"
+    ],
+    "post-update-cmd": [
+      "@composer dump-autoload"
+    ]
+  },
+  "config": {
+    "optimize-autoloader": true,
+    "sort-packages": true
+  },
+  "minimum-stability": "stable",
+  "prefer-stable": true,
+  "require-dev": {
+    "php-stubs/wordpress-stubs": "^6.9"
+  }
+}
