@@ -22,5 +22,17 @@ final class JobRoutes
             'callback' => [$controller, 'show'],
             'permission_callback' => '__return_true',
         ]);
+
+        register_rest_route('dalmoa/v1', '/jobs/(?P<id>\d+)/click', [
+            'methods' => \WP_REST_Server::CREATABLE,
+            'callback' => [$controller, 'click'],
+            'permission_callback' => '__return_true',
+        ]);
+
+        register_rest_route('dalmoa/v1', '/jobs/(?P<id>\d+)/view', [
+            'methods' => \WP_REST_Server::CREATABLE,
+            'callback' => [$controller, 'view'],
+            'permission_callback' => '__return_true',
+        ]);
     }
 }

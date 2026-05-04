@@ -3,11 +3,12 @@ declare(strict_types=1);
 
 namespace DalmoaCore;
 
+use DalmoaCore\Admin\AdPlanMetaBox;
+use DalmoaCore\Admin\Dashboard\AdDashboardRegistrar;
 use DalmoaCore\Admin\ListTable\AdminColumns;
 use DalmoaCore\Admin\ListTable\AdminQuickActions;
-use DalmoaCore\Admin\Dashboard\AdDashboardRegistrar;
-use DalmoaCore\Admin\AdPlanMetaBox;
 use DalmoaCore\Admin\MetaBoxes\AdAbTestMetaBox;
+use DalmoaCore\Admin\MetricsResetPage;
 use DalmoaCore\Api\Routes\AdRoutes;
 // use DalmoaCore\Api\Routes\AdAnalyticsRoutes;
 use DalmoaCore\Api\Routes\AdTrackingRoutes;
@@ -19,11 +20,11 @@ use DalmoaCore\Api\Routes\JobRoutes;
 use DalmoaCore\Api\Routes\LoanRoutes;
 use DalmoaCore\Api\Routes\MarketplaceRoutes;
 use DalmoaCore\Api\Routes\NewsRoutes;
+use DalmoaCore\Api\Routes\PaymentRoutes;
 use DalmoaCore\Api\Routes\RealEstateRoutes;
 use DalmoaCore\Api\Routes\SearchRoutes;
-use DalmoaCore\Api\Routes\TownBoardRoutes;
 use DalmoaCore\Api\Routes\SubmitRoutes;
-use DalmoaCore\Api\Routes\PaymentRoutes;
+use DalmoaCore\Api\Routes\TownBoardRoutes;
 use DalmoaCore\Fields\Admin\MetaBoxRegistrar;
 use DalmoaCore\Fields\Admin\MetaBoxRenderer;
 use DalmoaCore\Fields\Persistence\MetaSaver;
@@ -117,6 +118,7 @@ final class Bootstrap
         $this->registerAdminAssets();
         $this->registerAdminColumns();
         $this->registerAdminDashboard();
+        $this->registerMetricsResetPage();
         $this->registerRestRoutes();
         $this->registerLifecycleHooks();
     }
@@ -124,6 +126,11 @@ final class Bootstrap
     private function registerAdminDashboard(): void
     {
         (new AdDashboardRegistrar())->register();
+    }
+
+    private function registerMetricsResetPage(): void
+    {
+        (new MetricsResetPage())->init();
     }
 
     private function registerAbTestMetaBox(): void

@@ -7,6 +7,7 @@ use DalmoaCore\Api\Transformers\JobTransformer;
 use DalmoaCore\Localization\LocaleResolver;
 use DalmoaCore\Support\Response;
 use DalmoaCore\Support\Services\JobService;
+use DalmoaCore\Support\Services\ListingMetricsService;
 
 final class JobController
 {
@@ -14,6 +15,7 @@ final class JobController
         private readonly JobService $service = new JobService(),
         private readonly JobTransformer $transformer = new JobTransformer(),
         private readonly LocaleResolver $localeResolver = new LocaleResolver(),
+        private readonly ListingMetricsService $metrics = new ListingMetricsService(),
     ) {}
 
     public function index(\WP_REST_Request $request): \WP_REST_Response
@@ -60,6 +62,30 @@ final class JobController
         }
 
         return Response::json($this->transformer->transform($post, $locale));
+    }
+
+    public function click(\WP_REST_Request $request): \WP_REST_Response
+    {
+        $postId = (int) $request->get_param('id');
+
+        $count = $this->metrics->incrementClick($postId, 'job');
+
+        return Response::json([
+            'ok' => true,
+            'clickCount' => $count,
+        ]);
+    }
+
+    public function view(\WP_REST_Request $request): \WP_REST_Response
+    {
+        $postId = (int) $request->get_param('id');
+
+        $count = $this->metrics->incrementView($postId, 'job');
+
+        return Response::json([
+            'ok' => true,
+            'viewCount' => $count,
+        ]);
     }
 
     private function stringOrNull(mixed $value): ?string
