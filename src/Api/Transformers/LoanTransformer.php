@@ -4,6 +4,7 @@ declare(strict_types=1);
 namespace DalmoaCore\Api\Transformers;
 
 use DalmoaCore\Localization\LocaleResolver;
+use DalmoaCore\Support\Labels\DisplayLabel;
 
 final class LoanTransformer
 {
@@ -26,6 +27,9 @@ final class LoanTransformer
         $isPaid = $this->truthy(get_post_meta($post->ID, 'is_paid', true));
         $isFeatured = $this->truthy(get_post_meta($post->ID, 'is_featured', true));
 
+        $clickCount = (int) get_post_meta($post->ID, 'click_count', true);
+        $viewCount = (int) get_post_meta($post->ID, 'view_count', true);
+
         return [
             'id' => $post->ID,
             'slug' => $post->post_name,
@@ -44,6 +48,9 @@ final class LoanTransformer
             'contactPhone' => $this->meta($post->ID, 'contact_phone'),
             'contactUrl' => $this->meta($post->ID, 'contact_url'),
             'publishedAt' => get_the_date('c', $post),
+
+            'clickCount' => $clickCount,
+            'viewCount' => $viewCount,
 
             'adPlan' => $adPlan,
             'adPriority' => $adPriority,
@@ -108,5 +115,19 @@ final class LoanTransformer
         $value = strtolower(trim((string) $value));
 
         return in_array($value, ['1', 'true', 'yes', 'on', 'paid'], true);
+    }
+
+    private function enumLabel(string $key, int $postId, string $locale): ?string
+    {
+        $value = (string) get_post_meta($postId, $key, true);
+
+        if ($value === '') {
+            return null;
+        }
+
+        return match ($key) {
+            'employment_type' => DisplayLabel::employmentType($value, $locale),
+            default => $value,
+        };
     }
 }

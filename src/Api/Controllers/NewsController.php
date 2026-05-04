@@ -7,6 +7,7 @@ use DalmoaCore\Api\Transformers\NewsTransformer;
 use DalmoaCore\Localization\LocaleResolver;
 use DalmoaCore\Support\Response;
 use DalmoaCore\Support\Services\NewsService;
+use DalmoaCore\Support\Services\ListingMetricsService;
 
 final class NewsController
 {
@@ -14,6 +15,7 @@ final class NewsController
         private readonly NewsService $service = new NewsService(),
         private readonly NewsTransformer $transformer = new NewsTransformer(),
         private readonly LocaleResolver $localeResolver = new LocaleResolver(),
+        private readonly ListingMetricsService $metrics = new ListingMetricsService(),
     ) {}
 
     public function index(\WP_REST_Request $request): \WP_REST_Response
@@ -28,7 +30,7 @@ final class NewsController
             'page' => $this->toPage($request->get_param('page')),
         ];
 
-        $result = $this->service->list($filters);
+        $result = $this->service->listPaginated($filters);
 
         $items = array_map(
             fn(\WP_Post $post): array => $this->transformer->transform($post, $locale),

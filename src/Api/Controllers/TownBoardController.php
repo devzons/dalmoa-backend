@@ -7,6 +7,7 @@ use DalmoaCore\Api\Transformers\TownBoardTransformer;
 use DalmoaCore\Localization\LocaleResolver;
 use DalmoaCore\Support\Response;
 use DalmoaCore\Support\Services\TownBoardService;
+use DalmoaCore\Support\Services\ListingMetricsService;
 
 final class TownBoardController
 {
@@ -14,6 +15,7 @@ final class TownBoardController
         private readonly TownBoardService $service = new TownBoardService(),
         private readonly TownBoardTransformer $transformer = new TownBoardTransformer(),
         private readonly LocaleResolver $localeResolver = new LocaleResolver(),
+        private readonly ListingMetricsService $metrics = new ListingMetricsService(),
     ) {}
 
     public function index(\WP_REST_Request $request): \WP_REST_Response
@@ -24,12 +26,15 @@ final class TownBoardController
 
         $filters = [
             'q' => $this->stringOrNull($request->get_param('q')),
-            'category' => $this->stringOrNull($request->get_param('category')),
             'featured' => $this->toBool($request->get_param('featured')),
+            'region' => $this->stringOrNull($request->get_param('region')),
+            'category' => $this->stringOrNull($request->get_param('category')),
+            'price_min' => $this->toIntOrNull($request->get_param('price_min')),
+            'price_max' => $this->toIntOrNull($request->get_param('price_max')),
             'page' => $this->toPage($request->get_param('page')),
         ];
 
-        $result = $this->service->list($filters);
+        $result = $this->service->listPaginated($filters);
 
         $items = array_map(
             fn(\WP_Post $post): array => $this->transformer->transform($post, $locale),
@@ -53,10 +58,34 @@ final class TownBoardController
         $post = $this->service->findBySlug($slug);
 
         if (!$post instanceof \WP_Post) {
-            return Response::notFound('Town board item not found');
+            return Response::notFound('Town Board item not found');
         }
 
         return Response::json($this->transformer->transform($post, $locale));
+    }
+
+    public function click(\WP_REST_Request $request): \WP_REST_Response
+    {
+        $postId = (int) $request->get_param('id');
+
+        $count = $this->metrics->incrementClick($postId, 'town_board');
+
+        return Response::json([
+            'ok' => true,
+            'clickCount' => $count,
+        ]);
+    }
+
+    public function view(\WP_REST_Request $request): \WP_REST_Response
+    {
+        $postId = (int) $request->get_param('id');
+
+        $count = $this->metrics->incrementView($postId, 'town_board');
+
+        return Response::json([
+            'ok' => true,
+            'viewCount' => $count,
+        ]);
     }
 
     private function stringOrNull(mixed $value): ?string
@@ -75,9 +104,26 @@ final class TownBoardController
         return in_array($value, ['1', 'true', 'yes', 'on'], true);
     }
 
+    private function toIntOrNull(mixed $value): ?int
+    {
+        if ($value === null || $value === '') {
+            return null;
+        }
+
+        if (is_string($value)) {
+            $value = preg_replace('/[^\d]/', '', $value);
+        }
+
+        if ($value === '' || $value === null) {
+            return null;
+        }
+
+        return max(0, (int) $value);
+    }
+
     private function toPage(mixed $value): int
     {
         $page = (int) $value;
         return $page > 0 ? $page : 1;
-    }    
+    }
 }

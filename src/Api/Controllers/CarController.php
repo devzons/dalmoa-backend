@@ -7,6 +7,7 @@ use DalmoaCore\Api\Transformers\CarTransformer;
 use DalmoaCore\Localization\LocaleResolver;
 use DalmoaCore\Support\Response;
 use DalmoaCore\Support\Services\CarService;
+use DalmoaCore\Support\Services\ListingMetricsService;
 
 final class CarController
 {
@@ -14,11 +15,14 @@ final class CarController
         private readonly CarService $service = new CarService(),
         private readonly CarTransformer $transformer = new CarTransformer(),
         private readonly LocaleResolver $localeResolver = new LocaleResolver(),
+        private readonly ListingMetricsService $metrics = new ListingMetricsService(),
     ) {}
 
-    public function index(\WP_REST_Request $request)
+    public function index(\WP_REST_Request $request): \WP_REST_Response
     {
-        $locale = $this->localeResolver->resolve($request->get_param('locale'));
+        $locale = $this->localeResolver->resolve(
+            $request->get_param('lang') ?? $request->get_param('locale')
+        );
 
         $filters = [
             'q' => $this->stringOrNull($request->get_param('q')),
@@ -30,7 +34,7 @@ final class CarController
             'page' => $this->toPage($request->get_param('page')),
         ];
 
-        $result = $this->service->list($filters);
+        $result = $this->service->listPaginated($filters);
 
         $items = array_map(
             fn(\WP_Post $post): array => $this->transformer->transform($post, $locale),
@@ -46,7 +50,7 @@ final class CarController
         ]);
     }
 
-    public function show(\WP_REST_Request $request)
+    public function show(\WP_REST_Request $request): \WP_REST_Response|\WP_Error
     {
         $slug = (string) $request->get_param('slug');
         $locale = $this->localeResolver->resolve($request->get_param('locale'));
@@ -58,6 +62,30 @@ final class CarController
         }
 
         return Response::json($this->transformer->transform($post, $locale));
+    }
+
+    public function click(\WP_REST_Request $request): \WP_REST_Response
+    {
+        $postId = (int) $request->get_param('id');
+
+        $count = $this->metrics->incrementClick($postId, 'car');
+
+        return Response::json([
+            'ok' => true,
+            'clickCount' => $count,
+        ]);
+    }
+
+    public function view(\WP_REST_Request $request): \WP_REST_Response
+    {
+        $postId = (int) $request->get_param('id');
+
+        $count = $this->metrics->incrementView($postId, 'car');
+
+        return Response::json([
+            'ok' => true,
+            'viewCount' => $count,
+        ]);
     }
 
     private function stringOrNull(mixed $value): ?string

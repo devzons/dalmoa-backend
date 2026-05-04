@@ -4,6 +4,7 @@ declare(strict_types=1);
 namespace DalmoaCore\Api\Transformers;
 
 use DalmoaCore\Localization\LocaleResolver;
+use DalmoaCore\Support\Labels\DisplayLabel;
 
 final class TownBoardTransformer
 {
@@ -15,6 +16,9 @@ final class TownBoardTransformer
     {
         $locale = $this->localeResolver->resolve($locale);
         $thumbnailId = (int) get_post_meta($post->ID, 'thumbnail_id', true);
+
+        $clickCount = (int) get_post_meta($post->ID, 'click_count', true);
+        $viewCount = (int) get_post_meta($post->ID, 'view_count', true);
 
         return [
             'id' => $post->ID,
@@ -30,6 +34,10 @@ final class TownBoardTransformer
             'contactEmail' => $this->meta($post->ID, 'contact_email'),
             'contactPhone' => $this->meta($post->ID, 'contact_phone'),
             'publishedAt' => get_the_date('c', $post),
+
+            'clickCount' => $clickCount,
+            'viewCount' => $viewCount,
+
             'isFeatured' => (bool) get_post_meta($post->ID, 'is_featured', true),
         ];
     }
@@ -74,5 +82,19 @@ final class TownBoardTransformer
         $value = is_string($value) ? trim($value) : '';
 
         return $value !== '' ? $value : null;
+    }
+
+    private function enumLabel(string $key, int $postId, string $locale): ?string
+    {
+        $value = (string) get_post_meta($postId, $key, true);
+
+        if ($value === '') {
+            return null;
+        }
+
+        return match ($key) {
+            'employment_type' => DisplayLabel::employmentType($value, $locale),
+            default => $value,
+        };
     }
 }

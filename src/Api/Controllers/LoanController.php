@@ -7,6 +7,7 @@ use DalmoaCore\Api\Transformers\LoanTransformer;
 use DalmoaCore\Localization\LocaleResolver;
 use DalmoaCore\Support\Response;
 use DalmoaCore\Support\Services\LoanService;
+use DalmoaCore\Support\Services\ListingMetricsService;
 
 final class LoanController
 {
@@ -14,6 +15,7 @@ final class LoanController
         private readonly LoanService $service = new LoanService(),
         private readonly LoanTransformer $transformer = new LoanTransformer(),
         private readonly LocaleResolver $localeResolver = new LocaleResolver(),
+        private readonly ListingMetricsService $metrics = new ListingMetricsService(),
     ) {}
 
     public function index(\WP_REST_Request $request)
@@ -32,7 +34,7 @@ final class LoanController
             'page' => $this->toPage($request->get_param('page')),
         ];
 
-        $result = $this->service->list($filters);
+        $result = $this->service->listPaginated($filters);
 
         $items = array_map(
             fn(\WP_Post $post): array => $this->transformer->transform($post, $locale),
@@ -60,6 +62,30 @@ final class LoanController
         }
 
         return Response::json($this->transformer->transform($post, $locale));
+    }
+
+    public function click(\WP_REST_Request $request): \WP_REST_Response
+    {
+        $postId = (int) $request->get_param('id');
+
+        $count = $this->metrics->incrementClick($postId, 'loan');
+
+        return Response::json([
+            'ok' => true,
+            'clickCount' => $count,
+        ]);
+    }
+
+    public function view(\WP_REST_Request $request): \WP_REST_Response
+    {
+        $postId = (int) $request->get_param('id');
+
+        $count = $this->metrics->incrementView($postId, 'loan');
+
+        return Response::json([
+            'ok' => true,
+            'viewCount' => $count,
+        ]);
     }
 
     private function stringOrNull(mixed $value): ?string

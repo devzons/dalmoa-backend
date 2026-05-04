@@ -27,6 +27,9 @@ final class RealEstateTransformer
         $isPaid = $this->truthy(get_post_meta($post->ID, 'is_paid', true));
         $isFeatured = $this->truthy(get_post_meta($post->ID, 'is_featured', true));
 
+        $clickCount = (int) get_post_meta($post->ID, 'click_count', true);
+        $viewCount = (int) get_post_meta($post->ID, 'view_count', true);
+
         return [
             'id' => $post->ID,
             'slug' => $post->post_name,
@@ -47,6 +50,9 @@ final class RealEstateTransformer
             'contactPhone' => $this->meta($post->ID, 'contact_phone'),
             'contactUrl' => $this->meta($post->ID, 'contact_url'),
             'publishedAt' => get_the_date('c', $post),
+
+            'clickCount' => $clickCount,
+            'viewCount' => $viewCount,
 
             'adPlan' => $adPlan,
             'adPriority' => $adPriority,

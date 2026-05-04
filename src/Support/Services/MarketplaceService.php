@@ -13,7 +13,24 @@ final class MarketplaceService
         private readonly MarketplaceQuery $query = new MarketplaceQuery(),
     ) {}
 
+    /**
+     * @return \WP_Post[]
+     */
     public function list(array $filters = []): array
+    {
+        return $this->listPaginated($filters)['items'];
+    }
+
+    /**
+     * @return array{
+     *     items: \WP_Post[],
+     *     total: int,
+     *     page: int,
+     *     perPage: int,
+     *     totalPages: int
+     * }
+     */
+    public function listPaginated(array $filters = []): array
     {
         $posts = $this->query->list($filters);
 

@@ -7,6 +7,7 @@ use DalmoaCore\Api\Transformers\MarketplaceTransformer;
 use DalmoaCore\Localization\LocaleResolver;
 use DalmoaCore\Support\Response;
 use DalmoaCore\Support\Services\MarketplaceService;
+use DalmoaCore\Support\Services\ListingMetricsService;
 
 final class MarketplaceController
 {
@@ -14,9 +15,10 @@ final class MarketplaceController
         private readonly MarketplaceService $service = new MarketplaceService(),
         private readonly MarketplaceTransformer $transformer = new MarketplaceTransformer(),
         private readonly LocaleResolver $localeResolver = new LocaleResolver(),
+        private readonly ListingMetricsService $metrics = new ListingMetricsService(),
     ) {}
 
-    public function index(\WP_REST_Request $request)
+    public function index(\WP_REST_Request $request): \WP_REST_Response
     {
         $locale = $this->localeResolver->resolve(
             $request->get_param('lang') ?? $request->get_param('locale')
@@ -32,7 +34,7 @@ final class MarketplaceController
             'page' => $this->toPage($request->get_param('page')),
         ];
 
-        $result = $this->service->list($filters);
+        $result = $this->service->listPaginated($filters);
 
         $items = array_map(
             fn(\WP_Post $post): array => $this->transformer->transform($post, $locale),
@@ -48,7 +50,7 @@ final class MarketplaceController
         ]);
     }
 
-    public function show(\WP_REST_Request $request)
+    public function show(\WP_REST_Request $request): \WP_REST_Response|\WP_Error
     {
         $slug = (string) $request->get_param('slug');
         $locale = $this->localeResolver->resolve($request->get_param('locale'));
@@ -60,6 +62,30 @@ final class MarketplaceController
         }
 
         return Response::json($this->transformer->transform($post, $locale));
+    }
+
+    public function click(\WP_REST_Request $request): \WP_REST_Response
+    {
+        $postId = (int) $request->get_param('id');
+
+        $count = $this->metrics->incrementClick($postId, 'marketplace');
+
+        return Response::json([
+            'ok' => true,
+            'clickCount' => $count,
+        ]);
+    }
+
+    public function view(\WP_REST_Request $request): \WP_REST_Response
+    {
+        $postId = (int) $request->get_param('id');
+
+        $count = $this->metrics->incrementView($postId, 'marketplace');
+
+        return Response::json([
+            'ok' => true,
+            'viewCount' => $count,
+        ]);
     }
 
     private function stringOrNull(mixed $value): ?string
